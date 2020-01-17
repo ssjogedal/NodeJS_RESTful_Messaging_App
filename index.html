@@ -1,0 +1,117 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Message room with Node.js</title>
+    <script src="https://code.jquery.com/jquery-3.1.1.js"></script>
+    <script src="/jsencrypt.min.js"></script>
+    <script type="text/javascript">
+
+    sendMessage = function()
+    {
+      var recieverPubKey = $('#recieverPublicKey').val();
+
+      crypt = new JSEncrypt();
+      crypt.setKey(recieverPubKey);
+
+      userName = document.getElementById('inputUserName').value;
+      text = document.getElementById('inputText').value;
+      
+      encryptedText = crypt.encrypt(text);
+      sentMessages.push({encrypted:encryptedText , plain:text});
+
+      payload = {userName:userName, text:encryptedText};
+      
+      $.post("/messages", payload, getAllMessages);
+    }
+
+    getAllMessages = function()
+    {
+      $.ajax({type: 'GET', url:"/messages", success:fillMessageTable});
+    }
+
+    fillMessageTable = function(messages)
+    {
+      document.getElementById('messagesTable').innerHTML = "";
+      
+      for (i in messages)
+      {
+        addMessage(messages[i]);
+      }
+    }
+
+    addMessage = function(message)
+    {
+
+      crypt = new JSEncrypt();
+      crypt.setKey(privKey);
+
+      if (decrypted = crypt.decrypt(message.text)) 
+      {
+      message.text = decrypted; 
+      }
+      else 
+      {
+        for (i in sentMessages)
+        {
+          if (sentMessages[i].encrypted == message.text) 
+          {
+            message.text = sentMessages[i].plain;
+          }
+        } 
+      }
+
+      messagesTable = document.getElementById('messagesTable');
+
+      // Included Delete button in <tr> wich sends messageId onclick to deleteMessage function
+      messagesTable.innerHTML +=
+        "<tr><td>"+message.userName + ": " + message.text+"</td><td><button onclick='deleteMessage("+message.messageId+");'>Delete</button></td></tr>";
+    }
+
+    // Sends DELETE request to server, runs getAllMessages on success
+    deleteMessage = function(Id)
+    {
+      $.ajax({type: 'DELETE', url: "/messages/" + Id, success: getAllMessages});
+    }
+
+    makeNewKeys = function()
+    {
+      crypt = new JSEncrypt();
+      crypt.getKey();
+
+      pubKey = crypt.getPublicKey();
+      privKey = crypt.getPrivateKey();
+
+      var oldValuePub = $('#publicKey').val();
+      $('#publicKey').val(pubKey);
+
+      var oldValuePriv = $('#privateKey').val();
+      $('#privateKey').val(privKey);
+    }
+
+    var sentMessages = [];
+
+    </script>
+  </head>
+  <body style="padding:20px;" onload="getAllMessages();">
+
+      <h1>Send a message</h1>
+      <input id="inputUserName" type="text" placeholder="username" style="width:100px"></input>
+      <input id="inputText" type="text" placeholder="message" style="width:250px"></input>
+      <button onclick="sendMessage();">Send</button>
+
+      <h1>Messages</h1>
+      <table id="messagesTable" style="width:400px; border:1px solid black"></table>
+
+      Public key: <br/>
+      <textarea id="publicKey" cols="65" rows="10"></textarea>  <br/>
+
+      Private key: <br/>
+      <textarea id="privateKey" cols="65" rows="10"></textarea>  <br/>
+      
+      <br/><button onclick="makeNewKeys();">New Keys</button><br/>
+
+      <br/>Reciever Public key: <br />
+      <textarea id="recieverPublicKey" cols="65" rows="10"></textarea> <br/>
+      
+  </body>
+</html>
