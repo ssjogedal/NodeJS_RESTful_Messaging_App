@@ -2,7 +2,7 @@
 Asymmetrical cryptography based messaging system
 
 Important points to observe:
-• The server is handling all the communication, and it is permanently keeping the mes- sages, 
+• The server is handling all the communication, and it is permanently keeping the messages, 
 but it does not have any means to decrypt the messages.
 • Since the server is oblivious to the encryption, it can still act as a server for unencrypted communication. 
 You can try this by sending non-encrypted messages from new users.
